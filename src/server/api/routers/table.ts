@@ -44,16 +44,6 @@ export const tableRouter = createTRPCRouter({
           columns: {
             orderBy: { order: "asc" },
           },
-          rows: {
-            orderBy: { order: "asc" },
-            include: {
-              cells: {
-                include: {
-                  column: true,
-                },
-              },
-            },
-          },
         },
       });
     }),

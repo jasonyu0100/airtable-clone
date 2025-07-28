@@ -2,8 +2,8 @@
 
 import { StarIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import type { Base } from "~/types/base";
 
@@ -72,7 +72,7 @@ export function BasesList({ view, searchQuery }: BasesListProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-32 items-center justify-center">
+      <div className="flex h-32 items-center justify-center p-6">
         <div className="text-gray-500">Loading bases...</div>
       </div>
     );

@@ -1,8 +1,9 @@
 "use client";
 
+import { faker } from "@faker-js/faker";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { use, useState } from "react";
 import { VirtualizedTable } from "~/app/_components/VirtualizedTable";
 import { api } from "~/trpc/react";
@@ -14,9 +15,19 @@ interface BasePageProps {
 }
 
 export default function BasePage({ params }: BasePageProps) {
-  const router = useRouter();
   const { baseId } = use(params);
   const [activeTab, setActiveTab] = useState("table1");
+  const [progressState, setProgressState] = useState<{
+    isOpen: boolean;
+    currentBatch: number;
+    totalBatches: number;
+    progress: number;
+  }>({
+    isOpen: false,
+    currentBatch: 0,
+    totalBatches: 0,
+    progress: 0,
+  });
 
   // Fetch base data to get the base name
   const { data: bases } = api.base.getUserBases.useQuery();
@@ -29,7 +40,19 @@ export default function BasePage({ params }: BasePageProps) {
   const utils = api.useUtils();
   const createTable = api.table.create.useMutation({
     onSuccess: () => {
-      utils.table.getByBaseId.invalidate({ baseId });
+      void utils.table.getByBaseId.invalidate({ baseId });
+    },
+  });
+
+  // Get current active table data for 100K row creation
+  const { data: tableData } = api.table.getById.useQuery(
+    { id: activeTab },
+    { enabled: !!activeTab && activeTab !== "table1" }
+  );
+
+  const createBulkRows = api.row.createBulk.useMutation({
+    onSuccess: () => {
+      void utils.row.getByTableId.invalidate({ tableId: activeTab });
     },
   });
 
@@ -44,11 +67,89 @@ export default function BasePage({ params }: BasePageProps) {
     createTable.mutate({ name: tableName, baseId });
   };
 
+  const handleCreate100KRows = async () => {
+    if (!tableData?.columns || tableData.columns.length === 0) {
+      alert("Please create some columns first!");
+      return;
+    }
+
+    if (!activeTab || activeTab === "table1") {
+      alert("Please select a table first!");
+      return;
+    }
+
+    const confirmed = confirm("This will create 100,000 rows. Continue?");
+    if (!confirmed) return;
+
+    const totalRows = 100000;
+    const batchSize = 10000;
+    const numBatches = Math.ceil(totalRows / batchSize);
+
+    setProgressState({
+      isOpen: true,
+      currentBatch: 0,
+      totalBatches: numBatches,
+      progress: 0,
+    });
+
+    try {
+      for (let batchIndex = 0; batchIndex < numBatches; batchIndex++) {
+        console.log(`Processing batch ${batchIndex + 1}/${numBatches}...`);
+
+        const batchRows = [];
+        const startIndex = batchIndex * batchSize;
+        const endIndex = Math.min(startIndex + batchSize, totalRows);
+
+        for (let i = startIndex; i < endIndex; i++) {
+          const cells = tableData.columns.map((column) => ({
+            columnId: column.id,
+            value:
+              column.type === "NUMBER"
+                ? faker.number.int({ min: 1, max: 10000 }).toString()
+                : faker.lorem.words(3),
+          }));
+
+          batchRows.push({
+            name: faker.person.fullName(),
+            cells,
+          });
+        }
+
+        await createBulkRows.mutateAsync({
+          tableId: activeTab,
+          rows: batchRows,
+        });
+
+        const progress = Math.round(((batchIndex + 1) / numBatches) * 100);
+        setProgressState({
+          isOpen: true,
+          currentBatch: batchIndex + 1,
+          totalBatches: numBatches,
+          progress,
+        });
+
+        console.log(
+          `Completed batch ${batchIndex + 1}/${numBatches} (${batchRows.length} rows)`,
+        );
+      }
+
+      // Success - close modal after a short delay
+      setTimeout(() => {
+        setProgressState(prev => ({ ...prev, isOpen: false }));
+        alert("Successfully created 100,000 rows!");
+      }, 1000);
+    } catch (error) {
+      console.error("Error creating rows:", error);
+      setProgressState(prev => ({ ...prev, isOpen: false }));
+      alert("Error creating rows. Check console for details.");
+    }
+  };
+
   return (
     <div className="flex h-screen flex-row bg-white text-gray-900">
       {/* Header */}
       <div className="flex h-full w-16 justify-center border-r border-slate-300 py-2">
-        <a
+        <Link
           href="/"
           className="flex h-12 w-12 items-center justify-center rounded-md p-1 transition hover:bg-gray-100"
           title="Go to home"
@@ -60,13 +161,13 @@ export default function BasePage({ params }: BasePageProps) {
             height={40}
             className="h-8 w-8"
           />
-        </a>
+        </Link>
       </div>
       <div className="flex h-full flex-1 flex-col">
         {/* Header area */}
         <div className="flex h-16 w-full items-center border-b border-slate-300 px-3">
           <h1 className="text-2xl font-light text-gray-900">
-            {currentBase?.name || "Loading..."}
+            {currentBase?.name ?? "Loading..."}
           </h1>
         </div>
 
@@ -112,7 +213,13 @@ export default function BasePage({ params }: BasePageProps) {
           {/* Tab content area header */}
           <div className="h-14 w-full">
             <div className="flex h-full flex-1 items-center justify-end px-4">
-              <button className="cursor-pointer">Create 100K rows</button>
+              <button 
+                onClick={() => void handleCreate100KRows()}
+                className="cursor-pointer rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={progressState.isOpen}
+              >
+                {progressState.isOpen ? "Creating..." : "Create 100K rows"}
+              </button>
             </div>
           </div>
         </div>
@@ -124,7 +231,7 @@ export default function BasePage({ params }: BasePageProps) {
               <div className="text-center">
                 <div className="text-lg font-light">No tables yet</div>
                 <div className="text-sm">
-                  Click "Add" to create your first table
+                  Click &quot;Add&quot; to create your first table
                 </div>
               </div>
             </div>
@@ -132,6 +239,35 @@ export default function BasePage({ params }: BasePageProps) {
             activeTab && <VirtualizedTable tableId={activeTab} />
           )}
         </div>
+
+        {/* Progress Modal */}
+        {progressState.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="w-96 rounded-lg bg-white p-6 shadow-xl">
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                Creating 100,000 Rows
+              </h3>
+              
+              <div className="mb-4">
+                <div className="mb-2 flex justify-between text-sm text-gray-600">
+                  <span>Batch {progressState.currentBatch} of {progressState.totalBatches}</span>
+                  <span>{progressState.progress}%</span>
+                </div>
+                
+                <div className="h-2 w-full rounded-full bg-gray-200">
+                  <div
+                    className="h-2 rounded-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${progressState.progress}%` }}
+                  />
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Processing in batches of 10,000 rows to prevent memory issues...
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

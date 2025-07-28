@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useUserStore } from "~/stores/userStore";
 
 export default function SignOutPage() {
@@ -31,12 +32,12 @@ export default function SignOutPage() {
           >
             Sign out
           </button>
-          <a
+          <Link
             href="/"
             className="block w-full rounded-md bg-gray-900 px-4 py-3 text-sm font-light text-white hover:bg-gray-800 transition-colors"
           >
             Cancel
-          </a>
+          </Link>
         </div>
       </div>
     </div>

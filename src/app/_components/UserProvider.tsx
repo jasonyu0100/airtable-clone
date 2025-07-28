@@ -17,7 +17,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         name: session.user.name ?? null,
         email: session.user.email ?? null,
         image: session.user.image ?? null,
-        emailVerified: (session.user as any).emailVerified ?? null,
+        emailVerified: session.user.emailVerified ?? null,
       });
     } else if (status === "unauthenticated") {
       clearUser();

@@ -33,6 +33,11 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
+  session: {
+    strategy: "database" as const,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
   pages: {
     signIn: "/",
     signOut: "/auth/signout",
@@ -54,7 +59,7 @@ export const authConfig = {
   ],
   adapter: PrismaAdapter(db),
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user: _user, account: _account, profile: _profile }) {
       // This callback is called after successful authentication
       // The PrismaAdapter automatically creates/updates the user
       return true;
