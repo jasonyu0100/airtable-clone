@@ -4,6 +4,7 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
+import { VirtualizedTable } from "~/app/_components/VirtualizedTable";
 import { api } from "~/trpc/react";
 
 interface BasePageProps {
@@ -21,11 +22,27 @@ export default function BasePage({ params }: BasePageProps) {
   const { data: bases } = api.base.getUserBases.useQuery();
   const currentBase = bases?.find((base) => base.id === baseId);
 
-  const tabs = [
-    { id: "table1", name: "Table 1" },
-    { id: "table2", name: "Table 2" },
-    { id: "table3", name: "Table 3" },
-  ];
+  // Fetch tables for this base
+  const { data: tables = [] } = api.table.getByBaseId.useQuery({ baseId });
+
+  // Create table mutation
+  const utils = api.useUtils();
+  const createTable = api.table.create.useMutation({
+    onSuccess: () => {
+      utils.table.getByBaseId.invalidate({ baseId });
+    },
+  });
+
+  // Set active tab to first table if available and no tab is selected
+  const firstTableId = tables[0]?.id;
+  if (firstTableId && activeTab === "table1" && tables.length > 0) {
+    setActiveTab(firstTableId);
+  }
+
+  const handleCreateTable = () => {
+    const tableName = `Table ${tables.length + 1}`;
+    createTable.mutate({ name: tableName, baseId });
+  };
 
   return (
     <div className="flex h-screen flex-row bg-white text-gray-900">
@@ -57,53 +74,63 @@ export default function BasePage({ params }: BasePageProps) {
         <div className="flex h-24 w-full flex-col border-b border-slate-300">
           {/* Tab navigation */}
           <div className="relative flex h-8 w-full bg-green-100">
-            {tabs.map((tab, index) => (
+            {tables.map((table, index) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                key={table.id}
+                onClick={() => setActiveTab(table.id)}
                 className={`relative px-4 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
+                  activeTab === table.id
                     ? `rounded-t-md border-t border-r border-b-0 border-slate-300 bg-white text-gray-900 ${index > 0 ? "border-l border-slate-300" : ""}`
                     : "border-b border-slate-300 bg-green-100 text-gray-600 hover:text-gray-900"
                 }`}
               >
-                {tab.name}
+                {table.name}
                 {/* Half-height divider positioned absolutely to not interfere with border */}
-                {index < tabs.length - 1 &&
-                  activeTab !== tab.id &&
-                  activeTab !== tabs[index + 1]?.id && (
+                {index < tables.length - 1 &&
+                  activeTab !== table.id &&
+                  activeTab !== tables[index + 1]?.id && (
                     <div className="absolute top-2 -right-px h-4 w-px bg-slate-300"></div>
                   )}
               </button>
             ))}
             {/* Plus button for adding new tables */}
             <button
-              className="flex items-center gap-2 border-b border-slate-300 px-4 text-gray-600 transition-colors hover:bg-green-200 hover:text-gray-900"
+              onClick={handleCreateTable}
+              disabled={createTable.isPending}
+              className="flex items-center gap-2 border-b border-slate-300 px-4 text-gray-600 transition-colors hover:bg-green-200 hover:text-gray-900 disabled:opacity-50"
               title="Add new table"
             >
               <PlusIcon className="h-4 w-4" />
-              <span className="text-sm font-medium">Add</span>
+              <span className="text-sm font-medium">
+                {createTable.isPending ? "Adding..." : "Add"}
+              </span>
             </button>
             {/* Fill remaining space with border */}
             <div className="flex-1 border-b border-slate-300"></div>
           </div>
 
           {/* Tab content area header */}
-          <div className="h-14 w-full"></div>
+          <div className="h-14 w-full">
+            <div className="flex h-full flex-1 items-center justify-end px-4">
+              <button className="cursor-pointer">Create 100K rows</button>
+            </div>
+          </div>
         </div>
 
         {/* Main content area */}
         <div className="flex-1 bg-white">
-          <div className="p-6">
-            <div className="text-center text-gray-500">
-              <div className="text-lg font-light">
-                {tabs.find((tab) => tab.id === activeTab)?.name} Content
-              </div>
-              <div className="text-sm">
-                Table content will be displayed here
+          {tables.length === 0 ? (
+            <div className="flex h-full items-center justify-center text-gray-500">
+              <div className="text-center">
+                <div className="text-lg font-light">No tables yet</div>
+                <div className="text-sm">
+                  Click "Add" to create your first table
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            activeTab && <VirtualizedTable tableId={activeTab} />
+          )}
         </div>
       </div>
     </div>

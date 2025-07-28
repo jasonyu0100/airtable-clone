@@ -51,6 +51,7 @@ model User {
     accounts      Account[]
     sessions      Session[]
     bases         Base[]
+    tables        Table[]
 }
 
 model Base {
@@ -60,10 +61,80 @@ model Base {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId String
+    tables Table[]
 
     @@index([userId])
+}
+
+model Table {
+    id        String   @id @default(cuid())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    base     Base   @relation(fields: [baseId], references: [id], onDelete: Cascade)
+    baseId   String
+    user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId   String
+    columns  Column[]
+    rows     Row[]
+
+    @@index([baseId])
+    @@index([userId])
+}
+
+model Column {
+    id        String     @id @default(cuid())
+    name      String
+    type      ColumnType @default(TEXT)
+    order     Int
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @updatedAt
+
+    table   Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+    tableId String
+    cells   Cell[]
+
+    @@index([tableId])
+    @@index([order])
+}
+
+model Row {
+    id        String   @id @default(cuid())
+    name      String?
+    order     Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    table   Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+    tableId String
+    cells   Cell[]
+
+    @@index([tableId])
+    @@index([order])
+}
+
+model Cell {
+    id        String   @id @default(cuid())
+    value     String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+    columnId String
+    row      Row    @relation(fields: [rowId], references: [id], onDelete: Cascade)
+    rowId    String
+
+    @@unique([columnId, rowId])
+    @@index([columnId])
+    @@index([rowId])
+}
+
+enum ColumnType {
+    TEXT
+    NUMBER
 }
 
 model VerificationToken {
