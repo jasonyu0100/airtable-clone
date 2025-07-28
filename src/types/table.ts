@@ -32,7 +32,7 @@ export interface Row {
 
 export interface Cell {
   id: string;
-  value?: string | null;
+  value?: string | null | undefined;
   columnId: string;
   rowId: string;
   createdAt: Date;

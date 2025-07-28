@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import type { ColumnType } from "~/types/table";
+import { ColumnType } from "~/types/table";
 
 interface CreateFieldModalProps {
   isOpen: boolean;
@@ -13,20 +13,20 @@ interface CreateFieldModalProps {
 
 export function CreateFieldModal({ isOpen, onClose, onCreateField, isCreating }: CreateFieldModalProps) {
   const [fieldName, setFieldName] = useState("");
-  const [fieldType, setFieldType] = useState<ColumnType>("TEXT");
+  const [fieldType, setFieldType] = useState<ColumnType>(ColumnType.TEXT);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (fieldName.trim()) {
       onCreateField(fieldName.trim(), fieldType);
       setFieldName("");
-      setFieldType("TEXT");
+      setFieldType(ColumnType.TEXT);
     }
   };
 
   const handleClose = () => {
     setFieldName("");
-    setFieldType("TEXT");
+    setFieldType(ColumnType.TEXT);
     onClose();
   };
 
@@ -71,8 +71,8 @@ export function CreateFieldModal({ isOpen, onClose, onCreateField, isCreating }:
               onChange={(e) => setFieldType(e.target.value as ColumnType)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="TEXT">Text</option>
-              <option value="NUMBER">Number</option>
+              <option value={ColumnType.TEXT}>Text</option>
+              <option value={ColumnType.NUMBER}>Number</option>
             </select>
           </div>
           

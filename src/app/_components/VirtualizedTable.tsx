@@ -11,12 +11,10 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import type { Column, Row, Cell, ColumnType } from "~/types/table";
+import type { ColumnType } from "~/types/table";
 import { CreateFieldModal } from "./CreateFieldModal";
 
-interface TableData {
-  [key: string]: string | undefined;
-}
+type TableData = Record<string, string | undefined>;
 
 interface VirtualizedTableProps {
   tableId: string;
@@ -64,7 +62,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
   // Mutations
   const createColumn = api.column.create.useMutation({
     onSuccess: () => {
-      utils.table.getById.invalidate({ id: tableId });
+      void utils.table.getById.invalidate({ id: tableId });
       setShowCreateFieldModal(false);
     },
   });
@@ -99,7 +97,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
 
   const createRow = api.row.create.useMutation({
     onSuccess: () => {
-      utils.row.getByTableId.invalidate({ tableId });
+      void utils.row.getByTableId.invalidate({ tableId });
     },
   });
 
@@ -125,7 +123,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
                   ...row,
                   cells: row.cells?.map(cell => 
                     cell.columnId === newData.columnId 
-                      ? { ...cell, value: newData.value }
+                      ? { ...cell, value: newData.value ?? null }
                       : cell
                   ) || []
                 };
@@ -146,7 +144,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
     },
     onSettled: () => {
       // Always refetch after error or success
-      utils.row.getByTableId.invalidate({ tableId });
+      void utils.row.getByTableId.invalidate({ tableId });
     },
   });
 
@@ -170,7 +168,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
               if (row.id === newData.id) {
                 return {
                   ...row,
-                  name: newData.name
+                  name: newData.name ?? null
                 };
               }
               return row;
@@ -189,7 +187,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
     },
     onSettled: () => {
       // Always refetch after error or success
-      utils.row.getByTableId.invalidate({ tableId });
+      void utils.row.getByTableId.invalidate({ tableId });
     },
   });
 
@@ -239,7 +237,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
   const columns = useMemo(() => {
     if (!tableData?.columns) return [];
 
-    const cols: ColumnDef<TableData>[] = tableData.columns.map((column) =>
+    const cols = tableData.columns.map((column) =>
       columnHelper.accessor(column.id, {
         id: column.id,
         header: () => (
@@ -257,7 +255,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
           const cellKey = `${rowId}-${id}`;
           
           // Always show draft value if it exists, otherwise show server value
-          const displayValue = getDraftValue(cellKey, serverValue || "");
+          const displayValue = getDraftValue(cellKey, serverValue ?? "");
           
           return (
             <div className="relative">
@@ -273,7 +271,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
                     }
                   }}
                   onBlur={() => {
-                    if (rowId && cellValue !== (serverValue || "")) {
+                    if (rowId && cellValue !== (serverValue ?? "")) {
                       updateCell.mutate({
                         rowId,
                         columnId: id,
@@ -283,7 +281,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
                     setEditingCell(null);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && rowId && cellValue !== (serverValue || "")) {
+                    if (e.key === "Enter" && rowId && cellValue !== (serverValue ?? "")) {
                       updateCell.mutate({
                         rowId,
                         columnId: id,
@@ -382,7 +380,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
         const nameKey = `${rowData?.id}-name`;
         
         // Always show draft value if it exists, otherwise show server value
-        const displayName = getDraftValue(nameKey, rowData?.name || "");
+        const displayName = getDraftValue(nameKey, rowData?.name ?? "");
         
         return (
           <div className="w-full h-full relative">
@@ -398,7 +396,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
                   }
                 }}
                 onBlur={() => {
-                  if (rowData && cellValue !== (rowData.name || "")) {
+                  if (rowData && cellValue !== (rowData.name ?? "")) {
                     updateRowName.mutate({
                       id: rowData.id,
                       name: cellValue || undefined,
@@ -407,7 +405,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
                   setEditingCell(null);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && rowData && cellValue !== (rowData.name || "")) {
+                  if (e.key === "Enter" && rowData && cellValue !== (rowData.name ?? "")) {
                     updateRowName.mutate({
                       id: rowData.id,
                       name: cellValue || undefined,
@@ -460,7 +458,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
       ),
     });
 
-    return [selectCol, rowNameCol, ...cols, addColumnCol];
+    return [selectCol, rowNameCol, ...cols, addColumnCol] as ColumnDef<TableData>[];
   }, [tableData?.columns, updateCell, updateRowName, editingCell, cellValue, allRows, selectedRows, hoveredRow, toggleSelectAll, toggleRowSelection, getDraftValue, setDraftValue, clearDraftValue]);
 
   // Transform data for table
@@ -469,7 +467,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
       const rowData: TableData = { id: row.id };
       row.cells?.forEach((cell) => {
         if (cell.column) {
-          rowData[cell.column.id] = cell.value || "";
+          rowData[cell.column.id] = cell.value ?? "";
         }
       });
       return rowData;
@@ -507,7 +505,7 @@ export function VirtualizedTable({ tableId }: VirtualizedTableProps) {
           {/* Table Header */}
           <div className="sticky top-0 z-10 flex bg-gray-50 border-b-2 border-gray-200">
             {table.getHeaderGroups().map((headerGroup) =>
-              headerGroup.headers.map((header, index) => (
+              headerGroup.headers.map((header, _index) => (
                 <div
                   key={header.id}
                   className={`px-0 h-10 flex items-center ${
