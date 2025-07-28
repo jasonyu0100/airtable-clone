@@ -15,6 +15,7 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      emailVerified: Date | null;
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
@@ -33,7 +34,7 @@ declare module "next-auth" {
  */
 export const authConfig = {
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/",
     signOut: "/auth/signout",
   },
   providers: [
@@ -53,12 +54,21 @@ export const authConfig = {
   ],
   adapter: PrismaAdapter(db),
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    async signIn({ user, account, profile }) {
+      // This callback is called after successful authentication
+      // The PrismaAdapter automatically creates/updates the user
+      return true;
+    },
+    async session({ session, user }) {
+      // Include all user data in the session
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: user.id,
+          emailVerified: user.emailVerified,
+        },
+      };
+    },
   },
 } satisfies NextAuthConfig;
