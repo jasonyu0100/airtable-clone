@@ -1,29 +1,68 @@
-# Create T3 App
+# Airtable Clone
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+A modern, open-source Airtable alternative built with the T3 Stack.
 
-## What's next? How do I make an app with this?
+## Tech Stack
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- **Framework**: [Next.js](https://nextjs.org) (App Router)
+- **Authentication**: [NextAuth.js](https://next-auth.js.org) with Google OAuth
+- **Database**: PostgreSQL with [Prisma](https://prisma.io) ORM
+- **API**: [tRPC](https://trpc.io) for type-safe APIs
+- **Styling**: [Tailwind CSS](https://tailwindcss.com)
+- **Deployment**: Railway (Database) + Vercel (App)
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Getting Started
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+### Prerequisites
 
-## Learn More
+- Node.js 18+
+- PostgreSQL database (local or cloud)
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+### Setup
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+1. Clone the repository:
+```bash
+git clone https://github.com/jasonyu0100/airtable-clone.git
+cd airtable-clone
+```
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+2. Install dependencies:
+```bash
+npm install
+```
 
-## How do I deploy this?
+3. Copy `.env.example` to `.env` and fill in your environment variables:
+```bash
+cp .env.example .env
+```
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+4. Set up the database:
+```bash
+npm run db:push
+```
+
+5. Start the development server:
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to see the app.
+
+## Key Commands
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run db:push      # Push schema changes to database
+npm run db:studio    # Open Prisma Studio
+npm run lint         # Run ESLint
+npm run typecheck    # Run TypeScript compiler check
+```
+
+## Environment Variables
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `AUTH_SECRET` - NextAuth secret (generate with `npx auth secret`)
+- `AUTH_GOOGLE_ID` - Google OAuth client ID
+- `AUTH_GOOGLE_SECRET` - Google OAuth client secret
