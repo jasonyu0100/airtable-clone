@@ -30,7 +30,7 @@ export default function BasePage({ params }: BasePageProps) {
   return (
     <div className="flex h-screen flex-row bg-white text-gray-900">
       {/* Header */}
-      <div className="flex h-full w-16 justify-center border-r border-slate-300 py-4">
+      <div className="flex h-full w-16 justify-center border-r border-slate-300 py-2">
         <a
           href="/"
           className="flex h-12 w-12 items-center justify-center rounded-md p-1 transition hover:bg-gray-100"
