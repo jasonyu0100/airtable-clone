@@ -10,10 +10,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "~/hooks/useUser";
 import { useState, useRef, useEffect } from "react";
+import { CreateBaseModal } from "~/app/_components/CreateBaseModal";
+import { BasesList } from "~/app/_components/BasesList";
+import { Sidebar } from "~/app/_components/Sidebar";
 
 export default function Home() {
   const { isAuthenticated, user } = useUser();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<"home" | "starred">("home");
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,6 +59,8 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-full border border-slate-300 bg-white py-2 pr-4 pl-10 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
@@ -97,16 +105,20 @@ export default function Home() {
             </div>
           </div>
           <div className="flex h-full w-full">
-            <div className="flex h-full w-72 border-r border-slate-300">
-              {/* Sidebar content */}
-              <div className="mt-auto w-full p-4">
-                <div className="flex h-8 w-full items-center justify-center rounded bg-blue-600 text-center text-white">
-                  Create
-                </div>
-              </div>
+            <Sidebar 
+              currentView={currentView}
+              onViewChange={setCurrentView}
+              onCreateClick={() => setIsCreateModalOpen(true)}
+            />
+            <div className="flex h-full flex-1">
+              {/* MAIN SECTION */}
+              <BasesList view={currentView} searchQuery={searchQuery} />
             </div>
-            <div className="flex h-full flex-1"></div>
           </div>
+          <CreateBaseModal 
+            isOpen={isCreateModalOpen} 
+            onClose={() => setIsCreateModalOpen(false)} 
+          />
         </>
       ) : (
         /* Not authenticated - show sign in */
