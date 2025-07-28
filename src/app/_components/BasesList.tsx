@@ -3,7 +3,9 @@
 import { StarIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+import type { Base } from "~/types/base";
 
 function getBaseInitials(name: string): string {
   return name
@@ -39,6 +41,7 @@ interface BasesListProps {
 }
 
 export function BasesList({ view, searchQuery }: BasesListProps) {
+  const router = useRouter();
   const { data: allBases, isLoading: isLoadingAll } =
     api.base.getUserBases.useQuery();
   const { data: starredBases, isLoading: isLoadingStarred } =
@@ -53,7 +56,7 @@ export function BasesList({ view, searchQuery }: BasesListProps) {
 
     if (!searchQuery) return basesToFilter;
 
-    return basesToFilter.filter((base) =>
+    return basesToFilter.filter((base: Base) =>
       base.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [view, searchQuery, allBases, starredBases]);
@@ -92,9 +95,10 @@ export function BasesList({ view, searchQuery }: BasesListProps) {
 
   return (
     <div className="grid h-full w-full grid-cols-3 gap-4 p-6">
-      {bases.map((base) => (
+      {bases.map((base: Base) => (
         <div
           key={base.id}
+          onClick={() => router.push(`/base/${base.id}`)}
           className="group relative h-24 cursor-pointer rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:border-gray-300"
         >
           <div className="flex h-full items-center justify-between">
